@@ -5,9 +5,8 @@ import math
 from PIL import Image, ImageSequence # Importa a biblioteca Pillow
 
 # --- Constantes do Jogo ---
-# (O restante das suas constantes permaneceria aqui, igual ao arquivo original)
 # Tamanho da tela
-WIDTH, HEIGHT = 900, 500
+WIDTH, HEIGHT = 1000, 500
 SCREEN_TITLE = "Doctor Stone Game - Versão Melhorada"
 
 # Cores
@@ -40,18 +39,18 @@ FIREBALL_BASE_DAMAGE = 2
 SUPER_STRENGTH_DAMAGE_MULTIPLIER = 2
 
 # Caminhos das imagens (diretamente do diretório do script)
-BACKGROUND_IMG_PATH = "background.png" # Alterado para .jpg
-SENKU_IMG_PATH = "senku.png"
-FIREBALL_RIGHT_IMG_PATH = "fireball.png"
-FIREBALL_LEFT_IMG_PATH = "fireball.png" 
-MONKEY_IMG_PATH = "monkey.png"
-BOAR_IMG_PATH = "boar.png"
-GIANT_IMG_PATH = "giant.png"
-SENKU_STONE_IMG_PATH = "senku_stone.png"
-RAPID_FIRE_POWERUP_IMG_PATH = "coca.png"
-BANANA_POWERUP_IMG_PATH = "banana.png"
-SUPER_STRENGTH_POWERUP_IMG_PATH = "muscle.png" 
-LOAD_SCREEN_GIF_PATH = "load_screen.gif"
+BACKGROUND_IMG_PATH = "assets/background.png" 
+SENKU_IMG_PATH = "assets/senku.png"
+FIREBALL_RIGHT_IMG_PATH = "assets/fireball.png"
+FIREBALL_LEFT_IMG_PATH = "assets/fireball.png" 
+MONKEY_IMG_PATH = "assets/monkey.png"
+BOAR_IMG_PATH = "assets/boar.png"
+GIANT_IMG_PATH = "assets/giant.png"
+SENKU_STONE_IMG_PATH = "assets/senku_stone.png"
+RAPID_FIRE_POWERUP_IMG_PATH = "assets/coca.png"
+BANANA_POWERUP_IMG_PATH =  "assets/banana.png"
+SUPER_STRENGTH_POWERUP_IMG_PATH = "assets/muscle.png" 
+LOAD_SCREEN_GIF_PATH = "assets/load_screen.gif"
 
 # Tamanhos dos elementos
 PLAYER_SIZE = (150, 150)
@@ -120,9 +119,9 @@ DIALOGUE_BOX_HEIGHT = 120
 # --- Recursos dos Diálogos por Fase ---
 DIALOGUES_RESOURCES = {
       1: {
-        "char1_gif_path": "senku-falando.gif", 
-        "char2_gif_path": "kohaku.gif", 
-        "audio_path": "dialogue_phase1.ogg",  
+        "char1_gif_path": "assets/senku-falando.gif", 
+        "char2_gif_path": "assets/kohaku.gif", 
+        "audio_path": "assets/dialogue_phase1.ogg",  
         "script": [
             {"char": 1, "text": "Senku: Finalmente! Hora de começar a coletar ciência!"},
             {"char": 2, "text": "Kohaku: Não se esqueça dos perigos, Senku. Macacos e javalis por toda parte."},
