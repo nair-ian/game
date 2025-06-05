@@ -3,6 +3,8 @@ import random
 import os
 import math
 from PIL import Image, ImageSequence # Importa a biblioteca Pillow
+import moviepy.editor as mp
+
 
 # --- Constantes do Jogo ---
 # Tamanho da tela
@@ -97,16 +99,12 @@ PHASES = {
         "spawn_freq_min": 1200, # Exemplo: aumentado de 900
         "spawn_freq_max": 2800, # Exemplo: aumentado de 2200
         "monkey_speed_multiplier": 1.2, "boar_speed_multiplier": 1.1, "giant_speed_multiplier": 1.05},
-    4: {"monkeys": 7, "boars": 4, "giants": 2, "items": 2, 
+    4: {"monkeys": 4, "boars": 3, "giants": 2, "items": 2, 
         "target_defeated": 22, # Exemplo: aumentado de 15
         "spawn_freq_min": 1000, # Exemplo: aumentado de 800
         "spawn_freq_max": 2500, # Exemplo: aumentado de 2000
         "monkey_speed_multiplier": 1.3, "boar_speed_multiplier": 1.15, "giant_speed_multiplier": 1.1},
-    5: {"monkeys": 8, "boars": 5, "giants": 3, "items": 3, 
-        "target_defeated": 30, # Exemplo: aumentado de 20
-        "spawn_freq_min": 900,  # Exemplo: aumentado de 700
-        "spawn_freq_max": 2200, # Exemplo: aumentado de 1800
-        "monkey_speed_multiplier": 1.45, "boar_speed_multiplier": 1.25, "giant_speed_multiplier": 1.2}
+    
 }
 
 ITEM_SPAWN_INTERVAL_MIN = 4000 
@@ -115,76 +113,99 @@ ITEM_SPAWN_INTERVAL_MAX = 8000
 # --- Constantes para Cenas de Diálogo ---
 DIALOGUE_GIF_SIZE = (200, 200)
 DIALOGUE_BOX_HEIGHT = 120
-
-# --- Recursos dos Diálogos por Fase ---
-DIALOGUES_RESOURCES = {
-      1: {
-        "char1_gif_path": "assets/senku-falando.gif", 
-        "char2_gif_path": "assets/kohaku.gif", 
-        "audio_path": "assets/dialogue_phase1.ogg",  
-        "script": [
-            {"char": 1, "text": "Senku: Finalmente! Hora de começar a coletar ciência!"},
-            {"char": 2, "text": "Kohaku: Não se esqueça dos perigos, Senku. Macacos e javalis por toda parte."},
-            {"char": 1, "text": "Senku: Kukuku, com minhas invenções, estaremos dez bilhões por cento seguros!"},
-            {"char": 2, "text": "Kohaku: Mas como vamos começar????? "},
-            {"char": 1, "text": "Senku: Não se preocupe, Kohaku! Vamos usar a minha mais nova invenção"},
-            {"char": 2, "text": "Kohaku: O que é essa sua nova invenção?"},
-            {"char": 1, "text": "Senku: É uma maquina que nos ira ajudar a salvar o mundo!"},
-            {"char": 2, "text": "Kohaku: Isso parece incrível! Vamos lá!"},
-            {"char": 1, "text": "Senku: Sim! Vamos começar a aventura!"}
-
-        ]
-    },
-    2: { 
-        "char1_gif_path": "assets/kohaku2.gif",
-        "char2_gif_path": "assets/senku-falando2.gif",
-        "audio_path": "assets/dialogue_phase2.ogg",
-        "script": [
-            {"char": 1, "text": "Precisamos juntar recursos para o remedio da minha irma  ."},
-            {"char": 2, "text": "Kohaku: Certo! Vamos procurar por itens."},
-            {"char": 1, "text": "Senku: Olha! Um macaco! Vamos derrotá-lo para conseguir mais recursos."},
-            {"char": 2, "text": "Kohaku: Cuidado! Eles são rápidos e perigosos."},
-            {"char": 1, "text": "Senku: Kukuku! Confia no pai!"},
-            {"char": 2, "text": "Kohaku: Vamos lá!"},
-            {"char": 1, "text": "Senku: Sim! Vamos continuar nossa jornada!"}
-        ]
-    },
-3: {
-    "char1_gif_path": "assets/senku-falando3.gif",
-    "char2_gif_path": "assets/kohaku3.gif",
-    "audio_path": "assets/dialogue_phase3.ogg",
-    "script": [
-        {"char": 1, "text": "Senku: Eu acho que estamos indo bem, Kohaku!"},
-        {"char": 2, "text": "Kohaku: Sim, mas precisamos de mais recursos para o remédio."},
-        {"char": 1, "text": "Senku: Fique tranquilo! Vamos conseguir."},
-        {"char": 2, "text": "Kohaku: Estou preocupada, será que vamos conseguir?"},
-        {"char": 1, "text": "Senku: Kukuku! Kukuku! Claro que vamos!"},
-        {"char": 2, "text": "Kohaku: Ok Senku, eu confio em você!"},
-    ]
-},
-4: {
-    "char1_gif_path": "assets/char1_phase4.gif",
-    "char2_gif_path": "assets/char2_phase4.gif",
-    "audio_path": "assets/dialogue_phase4.ogg",
-    "script": [
-        { "Senku: Conseguimos agora posso fazer o remédio para sua irmã!"},
-        {"char": 2, "text": "Senku: Aqui Ruri toma o remédio!"},
-        {"char": 1, "text": "Ruri: Cof, cof cof."},
-        {"char": 2, "text": "Senku: Como você se sente, Ruri?"},
-        {"char": 1, "text": "Ruri: Muito melhor agora!"},
-        {"char": 2, "text": "Senku: Kukuku! Eu sabia que conseguiríamos!"},
-
-        # Aqui ocorre a mudança dos personagens e GIFs
-        {"action": "change_gif", "char1_gif_path": "assets/chrome.gif", "char2_gif_path": "assets/kohaku.gif"},
-
-        {"char": 1, "text": "Chrome: Uau, Senku, isso foi incrível!"},
-        {"char": 2, "text": "Kohaku: Agora Ruri está salva, graças ao seu remédio!"},
-        {"char": 1, "text": "Senku: Kukuku, ciência nunca falha."}
+# --- Eventos das Fases (Diálogos, Animações, etc.) ---
+PHASE_EVENTS = {
+    # FASE 1 - AGORA NO FORMATO DE LISTA DE EVENTOS
+    1: [
+        {"type": "dialogue", "config": {
+            "char1_gif_path": "assets/senku-falando.gif", 
+            "char2_gif_path": "assets/kohaku.gif", 
+            "audio_path": "assets/dialogue_phase1.ogg",  
+            "script": [
+                {"Senku": "Finalmente! Hora de começar a coletar ciência!"},
+                {"Kohaku": "Não se esqueça dos perigos, Senku. Macacos e javalis por toda parte."},
+                {"Senku": "Kukuku, com minhas invenções, estaremos dez bilhões por cento seguros!"},
+                {"Kohaku": "Mas como vamos começar?????"},
+                {"Senku": "Não se preocupe, Kohaku! Vamos usar a minha mais nova invenção."},
+                {"Kohaku": "O que é essa sua nova invenção?"},
+                {"Senku": "É uma maquina que nos ira ajudar a salvar o mundo!"},
+                {"Kohaku": "Isso parece incrível! Vamos lá!"},
+                {"Senku": "Sim! Vamos começar a aventura!"}
+            ]
+        }}
+    ],
+    # FASE 2 - AGORA NO FORMATO DE LISTA DE EVENTOS
+    2: [
+        {"type": "dialogue", "config": {
+            "char1_gif_path": "assets/kohaku2.gif",
+            "char2_gif_path": "assets/senku-falando2.gif",
+            "audio_path": "assets/dialogue_phase2.ogg",
+            "script": [
+                {"Senku": "Precisamos juntar recursos para o remedio da minha irma."},
+                {"Kohaku": "Certo! Vamos procurar por itens."},
+                {"Senku": "Olha! Um macaco! Vamos derrotá-lo para conseguir mais recursos."},
+                {"Kohaku": "Cuidado! Eles são rápidos e perigosos."},
+                {"Senku": "Kukuku! Confia no pai!"},
+                {"Kohaku": "Vamos lá!"},
+                {"Senku": "Sim! Vamos continuar nossa jornada!"}
+            ]
+        }}
+    ],
+    # FASE 3 - AGORA NO FORMATO DE LISTA DE EVENTOS
+    3: [
+        {"type": "dialogue", "config": {
+            "char1_gif_path": "assets/senku-falando3.gif",
+            "char2_gif_path": "assets/kohaku3.gif",
+            "audio_path": "assets/dialogue_phase3.ogg",
+            "script": [
+                {"Senku": "Eu acho que estamos indo bem, Kohaku!"},
+                {"Kohaku": "Sim, mas precisamos de mais recursos para o remédio."},
+                {"Senku": "Fique tranquilo! Vamos conseguir."},
+                {"Kohaku": "Estou preocupada, será que vamos conseguir?"},
+                {"Senku": "Kukuku! Kukuku! Claro que vamos!"},
+                {"Kohaku": "Ok Senku, eu confio em você!"}
+            ]
+        }}
+    ],
+    # FASE 4 - JÁ ESTAVA CORRETA
+    4: [
+        {"type": "dialogue", "config": {
+            "char1_gif_path": "assets/senku-falando4.gif",
+            "char2_gif_path": "assets/remedio.jpg",
+            "audio_path": "assets/dialogue_phase4.ogg",
+            "script": [
+                {"Senku": "Conseguimos agora posso fazer o remédio para sua Ruri!"},
+                {"Ruri": "Muito melhor agora!"},
+                {"Senku": "Kukuku! Eu sabia que conseguiríamos!"}
+            ]
+        }},
+        {"type": "dialogue", "config": {
+            "char1_gif_path": "assets/senku-falando5.gif",
+            "char2_gif_path": "assets/gostosas.jpg",
+            "audio_path": "assets/dialogue_phase4_part3.ogg",
+            "script": [
+                {"Senku": "Kukuku! Agora podemos continuar nossa jornada!"},
+                {"Gostosas": "Sim, vamos explorar mais jovem!"},
+                {"Senku": "Sim, agora que a nossa vila está segura e a lider Ruri está bem!"}
+            ]
+        }},
+        {"type": "animation", "config": {
+            "path": "assets/animacao.mp4",
+            "duration": 18000
+        }},
+    ],
+    # FASE 5 (TEMPLATE)
+    5: [
+        {"type": "dialogue", "config": {
+            "char1_gif_path": "assets/senku-final.gif",
+            "char2_gif_path": "assets/todos-felizes.gif",
+            "audio_path": "assets/dialogue_phase5.ogg",
+            "script": [
+                {"Senku": "Fim de jogo! A ciência venceu!"}
+            ]
+        }}
     ]
 }
-}
-
-
 # --- Inicialização do Pygame ---
 pygame.init()
 pygame.mixer.init()
@@ -632,31 +653,52 @@ def display_phase_info(phase_num):
     WIN.blit(phase_text, (WIDTH // 2 - phase_text.get_width() // 2, HEIGHT // 2 - 50))
     pygame.display.update()
     pygame.time.delay(1500) 
-
 def display_dialogue_scene(dialogue_config, current_phase_number):
     if not dialogue_config: return
+
+    # Carrega os recursos de GIF e áudio da fase
     char1_gif_frames = []
     char2_gif_frames = []
     dialogue_audio = None
     if dialogue_config.get("char1_gif_path"): char1_gif_frames = load_gif_frames(dialogue_config["char1_gif_path"], DIALOGUE_GIF_SIZE)
     if dialogue_config.get("char2_gif_path"): char2_gif_frames = load_gif_frames(dialogue_config["char2_gif_path"], DIALOGUE_GIF_SIZE)
     if dialogue_config.get("audio_path"):
-        audio_path = dialogue_config["audio_path"]
+        audio_path = dialogue_config.get("audio_path")
         if os.path.exists(audio_path):
-            try: dialogue_audio = pygame.mixer.Sound(audio_path); dialogue_audio.play()
-            except pygame.error as e: print(f"Erro áudio {audio_path}: {e}"); dialogue_audio = None
-        else: print(f"Áudio não encontrado: {audio_path}")
+            try:
+                dialogue_audio = pygame.mixer.Sound(audio_path)
+                dialogue_audio.play()
+            except pygame.error as e:
+                print(f"Erro ao carregar áudio {audio_path}: {e}")
+                dialogue_audio = None
+        else:
+            print(f"Áudio não encontrado: {audio_path}")
+    
     script = dialogue_config.get("script", [])
-    has_content = script or dialogue_audio or \
-                  (char1_gif_frames and not (len(char1_gif_frames)==1 and char1_gif_frames[0].get_width() <=50)) or \
-                  (char2_gif_frames and not (len(char2_gif_frames)==1 and char2_gif_frames[0].get_width() <=50))
-    if not has_content:
+    if not script:
         if dialogue_audio: dialogue_audio.stop()
         return
 
-    current_line_index = 0; anim_frame_char1 = 0; anim_frame_char2 = 0
-    last_gif_update_time = pygame.time.get_ticks(); gif_frame_duration = 100
-    dialogue_running = True; clock = pygame.time.Clock()
+    # Este "mapa" diz ao código qual personagem corresponde a qual slot (1=esquerda, 2=direita)
+    char_map = {
+        "Senku": 1,
+        "Chrome": 1,
+        "Kohaku": 2,
+        "Ruri": 2,
+        "Mulheres": 2,
+        "Gostosas": 2, # Personagem novo adicionado
+    }
+
+    # Variáveis de controle do diálogo
+    current_line_index = 0
+    anim_frame_char1 = 0
+    anim_frame_char2 = 0
+    last_gif_update_time = pygame.time.get_ticks()
+    gif_frame_duration = 100
+    dialogue_running = True
+    clock = pygame.time.Clock()
+
+    # Posições e dimensões dos elementos na tela
     pos_char1_gif = (50, HEIGHT // 2 - DIALOGUE_GIF_SIZE[1] // 2 - DIALOGUE_BOX_HEIGHT // 2)
     pos_char2_gif = (WIDTH - DIALOGUE_GIF_SIZE[0] - 50, HEIGHT // 2 - DIALOGUE_GIF_SIZE[1] // 2 - DIALOGUE_BOX_HEIGHT // 2)
     dialogue_box_rect = pygame.Rect(40, HEIGHT - DIALOGUE_BOX_HEIGHT - 40, WIDTH - 80, DIALOGUE_BOX_HEIGHT)
@@ -668,52 +710,201 @@ def display_dialogue_scene(dialogue_config, current_phase_number):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 if dialogue_audio: dialogue_audio.stop()
-                pygame.quit(); exit()
+                pygame.quit()
+                exit()
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_RETURN or event.key == pygame.K_SPACE:
-                    if script and current_line_index < len(script) - 1: current_line_index += 1
-                    else: dialogue_running = False
-                elif event.key == pygame.K_ESCAPE: dialogue_running = False
+                    if current_line_index < len(script) - 1:
+                        current_line_index += 1
+                    else:
+                        dialogue_running = False
+                elif event.key == pygame.K_ESCAPE:
+                    dialogue_running = False
+        
         if current_time - last_gif_update_time > gif_frame_duration:
             if char1_gif_frames: anim_frame_char1 = (anim_frame_char1 + 1) % len(char1_gif_frames)
             if char2_gif_frames: anim_frame_char2 = (anim_frame_char2 + 1) % len(char2_gif_frames)
             last_gif_update_time = current_time
-        if not script and dialogue_audio and dialogue_audio.get_num_channels() == 0: dialogue_running = False
-        
+
         WIN.fill(BLACK)
-        if char1_gif_frames and not (len(char1_gif_frames)==1 and char1_gif_frames[0].get_width() <=50) : WIN.blit(char1_gif_frames[anim_frame_char1], pos_char1_gif)
-        else: pygame.draw.rect(WIN, (50,50,50), (*pos_char1_gif, *DIALOGUE_GIF_SIZE)); WIN.blit(SMALL_FONT.render("GIF P1", True, WHITE), (pos_char1_gif[0]+10, pos_char1_gif[1]+10))
-        if char2_gif_frames and not (len(char2_gif_frames)==1 and char2_gif_frames[0].get_width() <=50): WIN.blit(char2_gif_frames[anim_frame_char2], pos_char2_gif)
-        else: pygame.draw.rect(WIN, (50,50,50), (*pos_char2_gif, *DIALOGUE_GIF_SIZE)); WIN.blit(SMALL_FONT.render("GIF P2", True, WHITE), (pos_char2_gif[0]+10, pos_char2_gif[1]+10))
+        if char1_gif_frames: WIN.blit(char1_gif_frames[anim_frame_char1], pos_char1_gif)
+        if char2_gif_frames: WIN.blit(char2_gif_frames[anim_frame_char2], pos_char2_gif)
         
-        pygame.draw.rect(WIN, (30, 30, 70), dialogue_box_rect); pygame.draw.rect(WIN, WHITE, dialogue_box_rect, 3)
-        if script and current_line_index < len(script):
+        pygame.draw.rect(WIN, (30, 30, 70), dialogue_box_rect)
+        pygame.draw.rect(WIN, WHITE, dialogue_box_rect, 3)
+
+        if current_line_index < len(script):
             current_speech = script[current_line_index]
-            speaker_name_text = "Personagem 1: " if current_speech["char"] == 1 else "Personagem 2: "
-            full_text_line = speaker_name_text + current_speech["text"]
-            render_text_multiline(WIN, full_text_line, text_area_start_pos, SMALL_FONT, WHITE, text_max_width, line_height_offset=3)
+            for name, text in current_speech.items():
+                full_text_line = f"{name}: {text}"
+                render_text_multiline(WIN, full_text_line, text_area_start_pos, SMALL_FONT, WHITE, text_max_width, line_height_offset=3)
         
         skip_text_surface = SMALL_FONT.render("ENTER/ESPAÇO para avançar | ESC para pular", True, YELLOW)
         WIN.blit(skip_text_surface, (WIDTH // 2 - skip_text_surface.get_width() // 2, HEIGHT - 30))
+        
         pygame.display.update()
         clock.tick(30)
-    if dialogue_audio: dialogue_audio.stop()
 
+    if dialogue_audio: 
+        dialogue_audio.stop()
+
+def display_animation_scene(animation_config):
+    """
+    Exibe uma animação (GIF ou vídeo MP4) em tela cheia.
+    """
+    path = animation_config.get("path")
+    duration_ms = animation_config.get("duration", 5000)
+
+    if not path or not os.path.exists(path):
+        print(f"Erro: Animação não encontrada em {path}. Pulando.")
+        return
+        
+    # Carrega os frames da animação, escalonados para o tamanho da tela
+    animation_frames = load_gif_frames(path, (WIDTH, HEIGHT))
+    if not animation_frames:
+        print(f"Erro ao carregar frames da animação: {path}. Pulando.")
+        return
+
+    frame_index = 0
+    last_frame_time = pygame.time.get_ticks()
+    start_time = pygame.time.get_ticks()
+    frame_delay = 100  # ms entre os frames
+    
+    animation_running = True
+    clock = pygame.time.Clock()
+
+    while animation_running:
+        current_time = pygame.time.get_ticks()
+        if current_time - start_time >= duration_ms:
+            animation_running = False
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE or event.key == pygame.K_SPACE:
+                    animation_running = False
+
+        if current_time - last_frame_time > frame_delay:
+            frame_index = (frame_index + 1) % len(animation_frames)
+            last_frame_time = current_time
+        
+        WIN.fill(BLACK)
+        WIN.blit(animation_frames[frame_index], (0, 0))
+
+        skip_text_surface = SMALL_FONT.render("ESC/ESPAÇO para pular", True, YELLOW)
+        WIN.blit(skip_text_surface, (WIDTH - skip_text_surface.get_width() - 10, HEIGHT - 30))
+
+        pygame.display.update()
+        clock.tick(30)
+
+    # --- INÍCIO DA LÓGICA CORRIGIDA ---
+
+    # Este "mapa" diz ao código qual personagem corresponde a qual slot (1=esquerda, 2=direita)
+    # Facilita a adição de novos personagens no futuro.
+    char_map = {
+        "Senku": 1,
+        "Chrome": 1,
+        "Kohaku": 2,
+        "Ruri": 2,
+        "Mulheres": 2
+    }
+
+    # Variáveis de controle do diálogo
+    current_line_index = 0
+    anim_frame_char1 = 0
+    anim_frame_char2 = 0
+    last_gif_update_time = pygame.time.get_ticks()
+    gif_frame_duration = 100
+    dialogue_running = True
+    clock = pygame.time.Clock()
+
+    # Posições e dimensões dos elementos na tela
+    pos_char1_gif = (50, HEIGHT // 2 - DIALOGUE_GIF_SIZE[1] // 2 - DIALOGUE_BOX_HEIGHT // 2)
+    pos_char2_gif = (WIDTH - DIALOGUE_GIF_SIZE[0] - 50, HEIGHT // 2 - DIALOGUE_GIF_SIZE[1] // 2 - DIALOGUE_BOX_HEIGHT // 2)
+    dialogue_box_rect = pygame.Rect(40, HEIGHT - DIALOGUE_BOX_HEIGHT - 40, WIDTH - 80, DIALOGUE_BOX_HEIGHT)
+    text_area_start_pos = (dialogue_box_rect.x + 20, dialogue_box_rect.y + 15)
+    text_max_width = dialogue_box_rect.width - 40
+
+    while dialogue_running:
+        current_time = pygame.time.get_ticks()
+        # Controle de eventos (teclado, fechar janela)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                if dialogue_audio: dialogue_audio.stop()
+                pygame.quit()
+                exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_RETURN or event.key == pygame.K_SPACE:
+                    if current_line_index < len(script) - 1:
+                        current_line_index += 1
+                    else:
+                        dialogue_running = False
+                elif event.key == pygame.K_ESCAPE:
+                    dialogue_running = False
+        
+        # Animação dos GIFs
+        if current_time - last_gif_update_time > gif_frame_duration:
+            if char1_gif_frames: anim_frame_char1 = (anim_frame_char1 + 1) % len(char1_gif_frames)
+            if char2_gif_frames: anim_frame_char2 = (anim_frame_char2 + 1) % len(char2_gif_frames)
+            last_gif_update_time = current_time
+
+        # --- Lógica de Desenho na Tela ---
+        WIN.fill(BLACK)
+        if char1_gif_frames: WIN.blit(char1_gif_frames[anim_frame_char1], pos_char1_gif)
+        if char2_gif_frames: WIN.blit(char2_gif_frames[anim_frame_char2], pos_char2_gif)
+        
+        pygame.draw.rect(WIN, (30, 30, 70), dialogue_box_rect)
+        pygame.draw.rect(WIN, WHITE, dialogue_box_rect, 3)
+
+        # Lógica para exibir o texto do diálogo
+        if current_line_index < len(script):
+            current_speech = script[current_line_index]
+            
+            # A MÁGICA ACONTECE AQUI:
+            # Este loop extrai o nome do personagem e o texto da fala
+            for name, text in current_speech.items():
+                # Agora usamos o nome real do personagem para exibir na tela
+                full_text_line = f"{name}: {text}"
+                render_text_multiline(WIN, full_text_line, text_area_start_pos, SMALL_FONT, WHITE, text_max_width, line_height_offset=3)
+        
+        # Texto de ajuda para o jogador
+        skip_text_surface = SMALL_FONT.render("ENTER/ESPAÇO para avançar | ESC para pular", True, YELLOW)
+        WIN.blit(skip_text_surface, (WIDTH // 2 - skip_text_surface.get_width() // 2, HEIGHT - 30))
+        
+        pygame.display.update()
+        clock.tick(30)
+
+    # Para o áudio quando a cena de diálogo termina
+    if dialogue_audio: 
+        dialogue_audio.stop()
 def main_game_loop():
     player = Player(WIDTH // 2 - PLAYER_SIZE[0] // 2, HEIGHT - PLAYER_SIZE[1] - 30) 
     monkeys, boars, giants, items, fireballs, explosions, floating_texts, all_particles = [],[],[],[],[],[],[],[]
     score = 0
     current_phase = 1
     
-    dialogue_data = DIALOGUES_RESOURCES.get(current_phase)
-    if dialogue_data: 
-        display_dialogue_scene(dialogue_data, current_phase)
+    ### INÍCIO DA LÓGICA DE EVENTOS (PARA FASE 1) ###
+    # Pega a lista de eventos da fase atual
+    events_list = PHASE_EVENTS.get(current_phase)
+    if events_list:
+        # Executa cada evento da lista em ordem
+        for event in events_list:
+            event_type = event.get("type")
+            event_config = event.get("config")
+
+            if event_type == "dialogue":
+                display_dialogue_scene(event_config, current_phase)
+            elif event_type == "animation":
+                display_animation_scene(event_config)
+    
     display_phase_info(current_phase)
+    ### FIM DA LÓGICA DE EVENTOS ###
 
     background_x = 0
     clock = pygame.time.Clock()
     last_spawn_times = {"monkey": 0, "boar": 0, "giant": 0, "item": 0}
-    ### total_enemies_defeated_in_phase: Contador de inimigos derrotados na fase atual.
     total_enemies_defeated_in_phase = 0
 
     while True: 
@@ -734,13 +925,11 @@ def main_game_loop():
                     pause_menu() 
 
         player.update_powerups_and_combo(current_time)
-        ### current_phase_config: Carrega as configurações da fase atual, incluindo 'target_defeated'.
         current_phase_config = PHASES.get(current_phase, PHASES[len(PHASES)])
 
-        ### CONDIÇÃO PRINCIPAL PARA MUDAR DE FASE:
-        # Compara o total de inimigos derrotados com o alvo da fase.
+        # CONDIÇÃO PRINCIPAL PARA MUDAR DE FASE
         if total_enemies_defeated_in_phase >= current_phase_config.get("target_defeated", 999):
-            current_phase += 1 # Avança para a próxima fase
+            current_phase += 1
             if current_phase > len(PHASES): # Vitória
                 WIN.blit(BIG_FONT.render("VOCÊ VENCEU!", True, GREEN), (WIDTH//2 - BIG_FONT.size("VOCÊ VENCEU!")[0]//2, HEIGHT//2 - 50))
                 pygame.display.update()
@@ -748,16 +937,28 @@ def main_game_loop():
                 return score, "victory" 
             
             else: # Próxima fase
-                dialogue_data = DIALOGUES_RESOURCES.get(current_phase)
-                if dialogue_data: 
-                    display_dialogue_scene(dialogue_data, current_phase)
+                ### INÍCIO DA LÓGICA DE EVENTOS (PARA PRÓXIMAS FASES) ###
+                events_list = PHASE_EVENTS.get(current_phase)
+                if events_list:
+                    for event in events_list:
+                        event_type = event.get("type")
+                        event_config = event.get("config")
+
+                        if event_type == "dialogue":
+                            display_dialogue_scene(event_config, current_phase)
+                        elif event_type == "animation":
+                            display_animation_scene(event_config)
+
                 display_phase_info(current_phase)
-                ### Zera o contador de inimigos para a nova fase.
+                ### FIM DA LÓGICA DE EVENTOS ###
+                
+                # Zera tudo para a nova fase
                 total_enemies_defeated_in_phase = 0
                 monkeys.clear(); boars.clear(); giants.clear(); items.clear(); fireballs.clear()
                 explosions.clear(); floating_texts.clear(); all_particles.clear()
                 last_spawn_times = {"monkey": 0, "boar": 0, "giant": 0, "item": 0}
 
+        # --- O restante do loop do jogo (movimento, colisões, desenho) permanece igual ---
         background_x = (background_x - BACKGROUND_SCROLL_SPEED) % WIDTH
         WIN.blit(BACKGROUND_IMG, (background_x - WIDTH, 0))
         WIN.blit(BACKGROUND_IMG, (background_x, 0))
@@ -823,7 +1024,6 @@ def main_game_loop():
                             
                             score_gained = score_val * (1 + player.hit_combo * 0.15)
                             score += int(score_gained)
-                            ### Incrementa o contador quando um inimigo é derrotado.
                             total_enemies_defeated_in_phase += 1
                             explosions.append(Explosion(enemy.rect.x, enemy.rect.y))
                             floating_texts.append(FloatingText(enemy.rect.centerx, enemy.rect.y, f"+{int(score_gained)}", YELLOW, 28))
@@ -898,6 +1098,8 @@ def main_game_loop():
             WIN.blit(combo_text, (WIDTH // 2 - combo_text.get_width() // 2, 10))
 
         pygame.display.update()
+    
+    return score
     
     # Este 'return score' só seria alcançado se o loop 'while True' fosse quebrado
     # de uma forma não prevista pelos 'return score, status' dentro do loop.
