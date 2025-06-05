@@ -135,16 +135,55 @@ DIALOGUES_RESOURCES = {
 
         ]
     },
-   2: { 
-        "char1_gif_path": "char1_phase2.gif",
-        "char2_gif_path": "char2_phase2.gif",
-        "audio_path": "dialogue_phase2.ogg",
+    2: { 
+        "char1_gif_path": "assets/kohaku2.gif",
+        "char2_gif_path": "assets/senku-falando2.gif",
+        "audio_path": "assets/dialogue_phase2.ogg",
         "script": [
-            {"char": 1, "text": "Texto da fase 2, personagem 1."},
-            {"char": 2, "text": "Texto da fase 2, personagem 2."},
+            {"char": 1, "text": "Precisamos juntar recursos para o remedio da minha irma  ."},
+            {"char": 2, "text": "Kohaku: Certo! Vamos procurar por itens."},
+            {"char": 1, "text": "Senku: Olha! Um macaco! Vamos derrotá-lo para conseguir mais recursos."},
+            {"char": 2, "text": "Kohaku: Cuidado! Eles são rápidos e perigosos."},
+            {"char": 1, "text": "Senku: Kukuku! Confia no pai!"},
+            {"char": 2, "text": "Kohaku: Vamos lá!"},
+            {"char": 1, "text": "Senku: Sim! Vamos continuar nossa jornada!"}
         ]
-    }
-} 
+    },
+3: {
+    "char1_gif_path": "assets/senku-falando3.gif",
+    "char2_gif_path": "assets/kohaku3.gif",
+    "audio_path": "assets/dialogue_phase3.ogg",
+    "script": [
+        {"char": 1, "text": "Senku: Eu acho que estamos indo bem, Kohaku!"},
+        {"char": 2, "text": "Kohaku: Sim, mas precisamos de mais recursos para o remédio."},
+        {"char": 1, "text": "Senku: Fique tranquilo! Vamos conseguir."},
+        {"char": 2, "text": "Kohaku: Estou preocupada, será que vamos conseguir?"},
+        {"char": 1, "text": "Senku: Kukuku! Kukuku! Claro que vamos!"},
+        {"char": 2, "text": "Kohaku: Ok Senku, eu confio em você!"},
+    ]
+},
+4: {
+    "char1_gif_path": "assets/char1_phase4.gif",
+    "char2_gif_path": "assets/char2_phase4.gif",
+    "audio_path": "assets/dialogue_phase4.ogg",
+    "script": [
+        { "Senku: Conseguimos agora posso fazer o remédio para sua irmã!"},
+        {"char": 2, "text": "Senku: Aqui Ruri toma o remédio!"},
+        {"char": 1, "text": "Ruri: Cof, cof cof."},
+        {"char": 2, "text": "Senku: Como você se sente, Ruri?"},
+        {"char": 1, "text": "Ruri: Muito melhor agora!"},
+        {"char": 2, "text": "Senku: Kukuku! Eu sabia que conseguiríamos!"},
+
+        # Aqui ocorre a mudança dos personagens e GIFs
+        {"action": "change_gif", "char1_gif_path": "assets/chrome.gif", "char2_gif_path": "assets/kohaku.gif"},
+
+        {"char": 1, "text": "Chrome: Uau, Senku, isso foi incrível!"},
+        {"char": 2, "text": "Kohaku: Agora Ruri está salva, graças ao seu remédio!"},
+        {"char": 1, "text": "Senku: Kukuku, ciência nunca falha."}
+    ]
+}
+}
+
 
 # --- Inicialização do Pygame ---
 pygame.init()
