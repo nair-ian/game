@@ -1,0 +1,26 @@
+  1: {
+        "char1_gif_path": "senku-falando.gif", # GIF do Personagem 1 para a Fase 1
+        "char2_gif_path": "kohaku.gif", # GIF do Personagem 2 para a Fase 1
+        "audio_path": "dialogue_phase1.ogg",  # Áudio do diálogo para a Fase 1 (use .ogg ou .wav)
+        "script": [
+            {"char": 1, "text": "Senku: Finalmente! Hora de começar a coletar ciência!"},
+            {"char": 2, "text": "Kohaku: Não se esqueça dos perigos, Senku. Macacos e javalis por toda parte."},
+            {"char": 1, "text": "Senku: Kukuku, com minhas invenções, estaremos dez bilhões por cento seguros!"},
+            {"char": 2, "text": "Kohaku: Mas como vamos começar????? "},
+            {"char": 1, "text": "Senku: Não se preocupe, Kohaku! Vamos usar a minha mais nova invenção"},
+            {"char": 2, "text": "Kohaku: O que é essa sua nova invenção?"},
+            {"char": 1, "text": "Senku: É uma maquina que nos ira ajudar a salvar o mundo!"},
+            {"char": 2, "text": "Kohaku: Isso parece incrível! Vamos lá!"},
+            {"char": 1, "text": "Senku: Sim! Vamos começar a aventura!"}
+
+        ]
+    },
+    2: {
+        "char1_gif_path": "char1_phase2.gif",
+        "char2_gif_path": "char2_phase2.gif",
+        "audio_path": "dialogue_phase2.ogg",
+        "script": [
+            {"char": 1, "text": "Senku: A próxima área parece mais desafiadora."},
+            {"char": 2, "text": "Kohaku: Ouvi dizer que javalis maiores e mais fortes habitam por lá."},
+        ]
+    },
