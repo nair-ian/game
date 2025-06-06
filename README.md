@@ -8,3 +8,4 @@ pip install moviepy
 Para rodar o projeto
 cd caminho/para/xpto/game
 python main.py
+ .
