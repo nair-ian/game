@@ -3,7 +3,7 @@ import random
 import os
 import math
 from PIL import Image, ImageSequence # Importa a biblioteca Pillow
-import moviepy.editor as mp
+import moviepy.editor as mp # Importa biblioteca moviepy
 
 
 # --- Constantes do Jogo ---
@@ -193,9 +193,6 @@ PHASE_EVENTS = {
             "path": "assets/animacao.mp4",
             "duration": 18000
         }},
-    ],
-    # FASE 5 (TEMPLATE)
-    5: [
         {"type": "dialogue", "config": {
             "char1_gif_path": "assets/senku-final.gif",
             "char2_gif_path": "assets/todos-felizes.gif",
@@ -750,7 +747,7 @@ def display_dialogue_scene(dialogue_config, current_phase_number):
 
 def display_animation_scene(animation_config):
     """
-    Exibe uma animação (GIF ou vídeo MP4) em tela cheia.
+    Exibe um vídeo MP4 em tela cheia usando MoviePy + Pygame.
     """
     path = animation_config.get("path")
     duration_ms = animation_config.get("duration", 5000)
@@ -758,25 +755,22 @@ def display_animation_scene(animation_config):
     if not path or not os.path.exists(path):
         print(f"Erro: Animação não encontrada em {path}. Pulando.")
         return
-        
-    # Carrega os frames da animação, escalonados para o tamanho da tela
-    animation_frames = load_gif_frames(path, (WIDTH, HEIGHT))
-    if not animation_frames:
-        print(f"Erro ao carregar frames da animação: {path}. Pulando.")
+
+    try:
+        clip = mp.VideoFileClip(path).resize((WIDTH, HEIGHT))
+    except Exception as e:
+        print(f"Erro ao carregar vídeo com MoviePy: {e}")
         return
 
-    frame_index = 0
-    last_frame_time = pygame.time.get_ticks()
+    # Converte o vídeo frame a frame para uso no pygame
     start_time = pygame.time.get_ticks()
-    frame_delay = 100  # ms entre os frames
-    
-    animation_running = True
     clock = pygame.time.Clock()
+    frame_generator = clip.iter_frames(fps=30, dtype='uint8')
 
-    while animation_running:
+    for frame in frame_generator:
         current_time = pygame.time.get_ticks()
         if current_time - start_time >= duration_ms:
-            animation_running = False
+            break
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -784,20 +778,22 @@ def display_animation_scene(animation_config):
                 exit()
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE or event.key == pygame.K_SPACE:
-                    animation_running = False
+                    return  # permite pular o vídeo
 
-        if current_time - last_frame_time > frame_delay:
-            frame_index = (frame_index + 1) % len(animation_frames)
-            last_frame_time = current_time
-        
-        WIN.fill(BLACK)
-        WIN.blit(animation_frames[frame_index], (0, 0))
+        # Converte frame do MoviePy para Surface do Pygame
+        surface = pygame.surfarray.make_surface(frame.swapaxes(0, 1))
+        surface = pygame.transform.flip(surface, False, True)  # Corrige orientação vertical
+        WIN.blit(surface, (0, 0))
 
+        # Texto de skip
         skip_text_surface = SMALL_FONT.render("ESC/ESPAÇO para pular", True, YELLOW)
         WIN.blit(skip_text_surface, (WIDTH - skip_text_surface.get_width() - 10, HEIGHT - 30))
 
         pygame.display.update()
         clock.tick(30)
+
+    clip.close()
+
 
     # --- INÍCIO DA LÓGICA CORRIGIDA ---
 
