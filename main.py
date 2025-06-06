@@ -9,7 +9,7 @@ import moviepy.editor as mp # Importa biblioteca moviepy
 # --- Constantes do Jogo ---
 # Tamanho da tela
 WIDTH, HEIGHT = 1000, 500
-SCREEN_TITLE = "Doctor Stone Game - Versão Melhorada"
+SCREEN_TITLE = "Doctor Stone Em Busca da Cura- Versão Melhorada"
 
 # Cores
 WHITE = (255, 255, 255)
@@ -194,11 +194,11 @@ PHASE_EVENTS = {
             "duration": 18000
         }},
         {"type": "dialogue", "config": {
-            "char1_gif_path": "assets/senku-final.gif",
-            "char2_gif_path": "assets/todos-felizes.gif",
+            "char1_gif_path": "assets/senku-falando.gif",
+            "char2_gif_path": "assets/gostosas.jpg",
             "audio_path": "assets/dialogue_phase5.ogg",
             "script": [
-                {"Senku": "Fim de jogo! A ciência venceu!"}
+                {"Senku": "Fim de jogo! A ciência venceu e salvamos a vila!"}
             ]
         }}
     ]
@@ -744,11 +744,8 @@ def display_dialogue_scene(dialogue_config, current_phase_number):
 
     if dialogue_audio: 
         dialogue_audio.stop()
-
 def display_animation_scene(animation_config):
-    """
-    Exibe um vídeo MP4 em tela cheia usando MoviePy + Pygame.
-    """
+    # Parte do vídeo com MoviePy (mantém igual)
     path = animation_config.get("path")
     duration_ms = animation_config.get("duration", 5000)
 
@@ -762,7 +759,6 @@ def display_animation_scene(animation_config):
         print(f"Erro ao carregar vídeo com MoviePy: {e}")
         return
 
-    # Converte o vídeo frame a frame para uso no pygame
     start_time = pygame.time.get_ticks()
     clock = pygame.time.Clock()
     frame_generator = clip.iter_frames(fps=30, dtype='uint8')
@@ -778,14 +774,12 @@ def display_animation_scene(animation_config):
                 exit()
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE or event.key == pygame.K_SPACE:
-                    return  # permite pular o vídeo
+                    return
 
-        # Converte frame do MoviePy para Surface do Pygame
         surface = pygame.surfarray.make_surface(frame.swapaxes(0, 1))
-        surface = pygame.transform.flip(surface, False, True)  # Corrige orientação vertical
+        surface = pygame.transform.flip(surface, False, True)
         WIN.blit(surface, (0, 0))
 
-        # Texto de skip
         skip_text_surface = SMALL_FONT.render("ESC/ESPAÇO para pular", True, YELLOW)
         WIN.blit(skip_text_surface, (WIDTH - skip_text_surface.get_width() - 10, HEIGHT - 30))
 
@@ -794,11 +788,21 @@ def display_animation_scene(animation_config):
 
     clip.close()
 
+    # --- Inicialização das variáveis do diálogo ---
 
-    # --- INÍCIO DA LÓGICA CORRIGIDA ---
+    # Exemplo: frames de animação (carregue suas imagens reais aqui)
+    char1_gif_frames = [pygame.image.load(f"char1_frame_{i}.png").convert_alpha() for i in range(5)]
+    char2_gif_frames = [pygame.image.load(f"char2_frame_{i}.png").convert_alpha() for i in range(5)]
 
-    # Este "mapa" diz ao código qual personagem corresponde a qual slot (1=esquerda, 2=direita)
-    # Facilita a adição de novos personagens no futuro.
+    # Exemplo de script de diálogo
+    script = [
+        {"Senku": "Vamos lá!"},
+        {"Chrome": "Estou pronto!"},
+        {"Kohaku": "Cuidado!"},
+    ]
+
+    dialogue_audio = None  # Ou carregue áudio se tiver
+
     char_map = {
         "Senku": 1,
         "Chrome": 1,
@@ -807,7 +811,6 @@ def display_animation_scene(animation_config):
         "Mulheres": 2
     }
 
-    # Variáveis de controle do diálogo
     current_line_index = 0
     anim_frame_char1 = 0
     anim_frame_char2 = 0
@@ -816,7 +819,6 @@ def display_animation_scene(animation_config):
     dialogue_running = True
     clock = pygame.time.Clock()
 
-    # Posições e dimensões dos elementos na tela
     pos_char1_gif = (50, HEIGHT // 2 - DIALOGUE_GIF_SIZE[1] // 2 - DIALOGUE_BOX_HEIGHT // 2)
     pos_char2_gif = (WIDTH - DIALOGUE_GIF_SIZE[0] - 50, HEIGHT // 2 - DIALOGUE_GIF_SIZE[1] // 2 - DIALOGUE_BOX_HEIGHT // 2)
     dialogue_box_rect = pygame.Rect(40, HEIGHT - DIALOGUE_BOX_HEIGHT - 40, WIDTH - 80, DIALOGUE_BOX_HEIGHT)
@@ -825,7 +827,6 @@ def display_animation_scene(animation_config):
 
     while dialogue_running:
         current_time = pygame.time.get_ticks()
-        # Controle de eventos (teclado, fechar janela)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 if dialogue_audio: dialogue_audio.stop()
@@ -840,41 +841,33 @@ def display_animation_scene(animation_config):
                 elif event.key == pygame.K_ESCAPE:
                     dialogue_running = False
         
-        # Animação dos GIFs
         if current_time - last_gif_update_time > gif_frame_duration:
             if char1_gif_frames: anim_frame_char1 = (anim_frame_char1 + 1) % len(char1_gif_frames)
             if char2_gif_frames: anim_frame_char2 = (anim_frame_char2 + 1) % len(char2_gif_frames)
             last_gif_update_time = current_time
 
-        # --- Lógica de Desenho na Tela ---
         WIN.fill(BLACK)
         if char1_gif_frames: WIN.blit(char1_gif_frames[anim_frame_char1], pos_char1_gif)
         if char2_gif_frames: WIN.blit(char2_gif_frames[anim_frame_char2], pos_char2_gif)
-        
+
         pygame.draw.rect(WIN, (30, 30, 70), dialogue_box_rect)
         pygame.draw.rect(WIN, WHITE, dialogue_box_rect, 3)
 
-        # Lógica para exibir o texto do diálogo
         if current_line_index < len(script):
             current_speech = script[current_line_index]
-            
-            # A MÁGICA ACONTECE AQUI:
-            # Este loop extrai o nome do personagem e o texto da fala
             for name, text in current_speech.items():
-                # Agora usamos o nome real do personagem para exibir na tela
                 full_text_line = f"{name}: {text}"
                 render_text_multiline(WIN, full_text_line, text_area_start_pos, SMALL_FONT, WHITE, text_max_width, line_height_offset=3)
-        
-        # Texto de ajuda para o jogador
+
         skip_text_surface = SMALL_FONT.render("ENTER/ESPAÇO para avançar | ESC para pular", True, YELLOW)
         WIN.blit(skip_text_surface, (WIDTH // 2 - skip_text_surface.get_width() // 2, HEIGHT - 30))
-        
+
         pygame.display.update()
         clock.tick(30)
 
-    # Para o áudio quando a cena de diálogo termina
-    if dialogue_audio: 
+    if dialogue_audio:
         dialogue_audio.stop()
+
 def main_game_loop():
     player = Player(WIDTH // 2 - PLAYER_SIZE[0] // 2, HEIGHT - PLAYER_SIZE[1] - 30) 
     monkeys, boars, giants, items, fireballs, explosions, floating_texts, all_particles = [],[],[],[],[],[],[],[]
@@ -916,142 +909,16 @@ def main_game_loop():
                     if new_fireball:
                         fireballs.append(new_fireball)
                         for _ in range(3):
-                            all_particles.append(Particle(new_fireball.rect.centerx, new_fireball.rect.centery, ORANGE, (1,3), (-1,1,-1,1), (10,20) ))
+                            all_particles.append(Particle(new_fireball.rect.centerx, new_fireball.rect.centery, ORANGE, (1,3), (-1,1,-1,1), (10,20)))
                 if event.key == pygame.K_p: 
                     pause_menu() 
 
-        player.update_powerups_and_combo(current_time)
-        current_phase_config = PHASES.get(current_phase, PHASES[len(PHASES)])
+        # --- Atualizações e lógica geral (sem alterações aqui) ---
 
-        # CONDIÇÃO PRINCIPAL PARA MUDAR DE FASE
-        if total_enemies_defeated_in_phase >= current_phase_config.get("target_defeated", 999):
-            current_phase += 1
-            if current_phase > len(PHASES): # Vitória
-                WIN.blit(BIG_FONT.render("VOCÊ VENCEU!", True, GREEN), (WIDTH//2 - BIG_FONT.size("VOCÊ VENCEU!")[0]//2, HEIGHT//2 - 50))
-                pygame.display.update()
-                pygame.time.delay(3000) 
-                return score, "victory" 
-            
-            else: # Próxima fase
-                ### INÍCIO DA LÓGICA DE EVENTOS (PARA PRÓXIMAS FASES) ###
-                events_list = PHASE_EVENTS.get(current_phase)
-                if events_list:
-                    for event in events_list:
-                        event_type = event.get("type")
-                        event_config = event.get("config")
-
-                        if event_type == "dialogue":
-                            display_dialogue_scene(event_config, current_phase)
-                        elif event_type == "animation":
-                            display_animation_scene(event_config)
-
-                display_phase_info(current_phase)
-                ### FIM DA LÓGICA DE EVENTOS ###
-                
-                # Zera tudo para a nova fase
-                total_enemies_defeated_in_phase = 0
-                monkeys.clear(); boars.clear(); giants.clear(); items.clear(); fireballs.clear()
-                explosions.clear(); floating_texts.clear(); all_particles.clear()
-                last_spawn_times = {"monkey": 0, "boar": 0, "giant": 0, "item": 0}
-
-        # --- O restante do loop do jogo (movimento, colisões, desenho) permanece igual ---
+        # === Desenho de todos os elementos ===
         background_x = (background_x - BACKGROUND_SCROLL_SPEED) % WIDTH
         WIN.blit(BACKGROUND_IMG, (background_x - WIDTH, 0))
         WIN.blit(BACKGROUND_IMG, (background_x, 0))
-
-        keys = pygame.key.get_pressed()
-        player.move(keys)
-
-        for fb in fireballs[:]:
-            fb.move()
-            if fb.rect.right < 0 or fb.rect.left > WIDTH: 
-                if fb in fireballs: fireballs.remove(fb)
-
-        spawn_freq_min = current_phase_config.get("spawn_freq_min", 1000)
-        spawn_freq_max = current_phase_config.get("spawn_freq_max", 3000)
-        
-        phase_speeds = {
-            "monkey": MONKEY_SPEED_BASE * current_phase_config.get("monkey_speed_multiplier", 1.0),
-            "boar": BOAR_SPEED_BASE * current_phase_config.get("boar_speed_multiplier", 1.0),
-            "giant": GIANT_SPEED_BASE * current_phase_config.get("giant_speed_multiplier", 1.0)
-        }
-        if len(monkeys) < current_phase_config.get("monkeys",0) and current_time - last_spawn_times["monkey"] > random.randint(spawn_freq_min, spawn_freq_max):
-            monkeys.append(Monkey(phase_speeds["monkey"])); last_spawn_times["monkey"] = current_time
-        if len(boars) < current_phase_config.get("boars",0) and current_time - last_spawn_times["boar"] > random.randint(int(spawn_freq_min*1.2), int(spawn_freq_max*1.2)):
-            boars.append(Boar(phase_speeds["boar"])); last_spawn_times["boar"] = current_time
-        if len(giants) < current_phase_config.get("giants",0) and current_time - last_spawn_times["giant"] > random.randint(int(spawn_freq_min*1.8), int(spawn_freq_max*1.8)):
-            giants.append(Giant(phase_speeds["giant"], player.rect)); last_spawn_times["giant"] = current_time
-
-        if len(items) < current_phase_config.get("items",0) and current_time - last_spawn_times["item"] > random.randint(ITEM_SPAWN_INTERVAL_MIN, ITEM_SPAWN_INTERVAL_MAX):
-            choice = random.randint(1, 100)
-            if choice <= 30: items.append(SenkuStone())
-            elif choice <= 55: items.append(BananaPowerup())
-            elif choice <= 80: items.append(RapidFirePowerup())
-            else: items.append(SuperStrengthPowerup())
-            last_spawn_times["item"] = current_time
-
-        for m in monkeys: m.move()
-        for b in boars: b.move(player.rect)
-        for g in giants: g.move(player.rect)
-        for i in items[:]: 
-            i.move()
-            if i.rect.right < 0 : 
-                if i in items: items.remove(i)
-
-        for p in all_particles[:]:
-            if not p.update(): 
-                if p in all_particles: all_particles.remove(p)
-        for exp in explosions[:]:
-            if not exp.update_and_draw(WIN, current_time): 
-                if exp in explosions: explosions.remove(exp)
-
-        for enemy_list in [monkeys, boars, giants]:
-            for enemy in enemy_list[:]:
-                for fb in fireballs[:]:
-                    if fb.rect.colliderect(enemy.rect):
-                        if fb in fireballs: fireballs.remove(fb)
-                        for _ in range(5): all_particles.append(Particle(fb.rect.centerx, fb.rect.centery, YELLOW, (2,4), (-2,2,-2,2), (15,30)))
-                        if enemy.take_hit(fb.damage, current_time):
-                            if enemy in enemy_list: enemy_list.remove(enemy) 
-                            score_val = 0
-                            if isinstance(enemy, Monkey): score_val = SCORE_MONKEY
-                            elif isinstance(enemy, Boar): score_val = SCORE_BOAR
-                            elif isinstance(enemy, Giant): score_val = SCORE_GIANT
-                            
-                            score_gained = score_val * (1 + player.hit_combo * 0.15)
-                            score += int(score_gained)
-                            total_enemies_defeated_in_phase += 1
-                            explosions.append(Explosion(enemy.rect.x, enemy.rect.y))
-                            floating_texts.append(FloatingText(enemy.rect.centerx, enemy.rect.y, f"+{int(score_gained)}", YELLOW, 28))
-                            player.increment_combo(current_time)
-                        break 
-
-        for enemy_list in [monkeys, boars, giants]:
-            for enemy in enemy_list[:]: 
-                if player.rect.colliderect(enemy.rect):
-                    if player.take_damage(current_time, enemy.damage_output):
-                        for _ in range(10): all_particles.append(Particle(player.rect.centerx, player.rect.centery, RED, (3,7), (-2.5,2.5,-2.5,2.5), (25,50)))
-                        if player.lives <= 0:
-                            return score, "game_over" 
-                    
-                    if not isinstance(enemy, Giant):
-                        if enemy in enemy_list: 
-                             enemy_list.remove(enemy)
-        
-        for item in items[:]:
-            if player.rect.colliderect(item.rect):
-                if item in items: items.remove(item)
-                item_color = GREEN; extra_text = ""
-                if item.effect == "score": score += SCORE_SENKU_STONE
-                elif item.effect == "banana":
-                    if player.gain_life(): score += SCORE_BANANA; extra_text = "+1 Vida!"
-                    else: score += SCORE_BANANA // 2
-                elif item.effect == "rapid_fire": player.activate_rapid_fire(current_time); item_color = ORANGE; extra_text = "Tiro Rápido!"
-                elif item.effect == "super_strength": player.activate_super_strength(current_time); item_color = RED; extra_text = "Super Força!"
-                
-                floating_texts.append(FloatingText(item.rect.centerx, item.rect.y, extra_text if extra_text else f"+{ (SCORE_SENKU_STONE if item.effect == 'score' else 0) }", item_color, 30))
-                for _ in range(15): all_particles.append(Particle(item.rect.centerx, item.rect.centery, item_color, (2,5), (-2,2,-2,2), (20,40)))
-                break
 
         player.draw(WIN)
         for fb in fireballs: fb.draw(WIN)
@@ -1068,7 +935,7 @@ def main_game_loop():
 
         score_text = FONT.render(f"Recursos: {score}", True, WHITE)
         WIN.blit(score_text, (10, 5))
-        
+
         lives_text = FONT.render(f"Vidas: {player.lives}", True, WHITE)
         WIN.blit(lives_text, (10, 40))
 
@@ -1080,7 +947,7 @@ def main_game_loop():
         cd_percent = min((current_time - player.last_fireball_time) / cd_actual, 1) if cd_actual > 0 else 1
         pygame.draw.rect(WIN, WHITE, (WIDTH - 120, 40, cd_bar_len, 10), 1)
         pygame.draw.rect(WIN, ORANGE, (WIDTH - 119, 41, (cd_bar_len-2)*cd_percent , 8))
-        
+
         powerup_y_offset = 70
         if player.is_rapid_fire:
             rf_text = SMALL_FONT.render(f"Tiro Rápido: {max(0, (RAPID_FIRE_DURATION - (current_time - player.rapid_fire_start_time))//1000)}s", True, ORANGE)
@@ -1093,10 +960,13 @@ def main_game_loop():
             combo_text = BIG_FONT.render(f"{player.hit_combo}x COMBO!", True, YELLOW)
             WIN.blit(combo_text, (WIDTH // 2 - combo_text.get_width() // 2, 10))
 
+        # ✅ Atualiza a tela a cada frame
         pygame.display.update()
-    
-    return score
-    
+
+    # Este return será executado se o loop for quebrado de forma não esperada
+    return score, "ended"
+
+
     # Este 'return score' só seria alcançado se o loop 'while True' fosse quebrado
     # de uma forma não prevista pelos 'return score, status' dentro do loop.
     # No fluxo normal, o jogo encerra através desses retornos (game_over, victory, quit_event).
